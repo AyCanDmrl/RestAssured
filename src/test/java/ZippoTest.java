@@ -1,5 +1,15 @@
+import POJO.Locatıon;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import java.util.List;
 
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
@@ -202,6 +212,150 @@ public class ZippoTest {
         }
     }
 
+    private ResponseSpecification responseSpecification;
+    private RequestSpecification requestSpecification;
+
+    @BeforeClass
+    public void setup(){
+
+    baseURI="http://api.zippopotam.us";
+
+    requestSpecification=new RequestSpecBuilder()
+            .log(LogDetail.URI)
+            .setAccept(ContentType.JSON)
+            .build();
+
+    responseSpecification=new ResponseSpecBuilder()
+            .expectStatusCode(200)
+            .expectContentType(ContentType.JSON)
+            .log(LogDetail.BODY)
+            .build();
+
+
+    }
+    @Test
+    public void bodyArrayHasSizeTest_requestSpecification() {
+        given()
+                .spec(requestSpecification)
+                .when()
+                .get("/us/90210")
+
+                .then()
+                .body("places", hasSize(1))
+                .spec(responseSpecification);
+    }
+
+    @Test
+    public void bodyArrayHasSizeTest_responseSpecification() {
+        given()
+                .log().uri()
+                .when()
+                .get("/us/90210")
+
+                .then()
+                .body("places", hasSize(1))
+                .spec(responseSpecification)
+        ;
+    }
+
+
+    @Test
+    public void bodyArrayHasSizeTest_baseUriTest() {
+        given()
+                .log().uri()
+                .when()
+                .get("/us/90210")
+
+                .then()
+                .body("places", hasSize(1))
+                .log().body()
+                .statusCode(200)
+        ;
+    }
+
+@Test
+    public void extractingJsonPath(){
+        String place_name= given()
+                //.spec(requestSpecification)
+                .when()
+                .get("/us/90210")
+                .then()
+                .spec(responseSpecification)
+                //.body("places[0].'place name'",equalTo("Beverly Hills"))
+                .extract().path("places[0].'place name'")
+              //" " -->String, 1-->integer
+
+        ;
+    System.out.println("place name = " + place_name);
+
+}
+
+    @Test
+    public void extractingJsonPathInt() {
+        Integer limit=
+        given()
+
+                .param("page",1)
+                //.log().uri()
+                .when()
+                .get("https://gorest.co.in/public/v1/users")
+
+                .then()
+                //.log().body()
+                .extract().path("meta.pagination.limit")
+        ;
+        System.out.println("limit ="+limit);
+    }
+
+    @Test
+    public void extractingJsonPathIntList() {
+      List<Integer> ids=
+                given()
+
+                        .param("page",1)
+                        //.log().uri()
+                        .when()
+                        .get("https://gorest.co.in/public/v1/users")
+
+                        .then()
+                        //.log().body()
+                        .extract().path("data.id")
+                ;
+        System.out.println("ids ="+ids);
+    }
+    @Test
+    public void extractingJsonPathStringList() {
+        List<String> placeNames=
+                given()
+
+                        .when()
+                        .get("/tr/01000")
+
+                        .then()
+                        //.spec(responseSpecification)
+                        .extract().path("places.'place name'")
+                ;
+        System.out.println("placeNames ="+placeNames);
+        Assert.assertTrue(placeNames.contains("Gölbaşi Köyü"));
+    }
+    @Test
+    public void exractingJsonPOJO(){
+        
+        Locatıon locatıon=
+        given()
+
+                .when()
+                .get("/us/90210")
+
+                .then()
+                .extract().as(Locatıon.class)
+
+       ;
+        System.out.println("locatıon = " + locatıon);
+        System.out.println("locatıon.getCountry() = " + locatıon.getCountry());
+        System.out.println("locatıon.getPlaces() = " + locatıon.getPlaces());
+        System.out.println("locatıon.getPlaces().get(0).getPlacename() = " + locatıon.getPlaces().get(0).getPlacename());
+    }
 }
 
 
